@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import click
 
@@ -19,9 +22,14 @@ from hatch.cli.shell import shell
 from hatch.cli.status import status
 from hatch.cli.version import version
 from hatch.config.constants import AppEnvVars, ConfigEnvVars
+from hatch.plugin.manager import PluginManager
 from hatch.project.core import Project
 from hatch.utils.ci import running_in_ci
 from hatch.utils.fs import Path
+
+if TYPE_CHECKING:
+    from hatchling.plugin.manager import ClassRegister
+    from hatch.cli.plugin.interface import CommandLinePluginInterface
 
 
 @click.group(
@@ -196,20 +204,17 @@ def hatch(ctx: click.Context, env_name, project, verbose, quiet, color, interact
         return
 
 
-hatch.add_command(build)
-hatch.add_command(clean)
-hatch.add_command(config)
-hatch.add_command(dep)
-hatch.add_command(env)
-hatch.add_command(fmt)
-hatch.add_command(new)
-hatch.add_command(project)
-hatch.add_command(publish)
-hatch.add_command(python)
-hatch.add_command(run)
-hatch.add_command(shell)
-hatch.add_command(status)
-hatch.add_command(version)
+plugin_manager = PluginManager()
+command_line_register: ClassRegister = plugin_manager.command_line
+cli_plugins: dict[str, CommandLinePluginInterface] = command_line_register.collect(include_third_party=True)
+
+for plugin in cli_plugins.values():
+    for item in plugin.cli():
+        if isinstance(item, (click.Command, click.Group)):
+            hatch.add_command(item)
+        else:
+            msg = f"Unknown CLI plugin item type: {item}"
+            raise TypeError(msg)
 
 __management_command = os.environ.get('PYAPP_COMMAND_NAME', '')
 if __management_command:

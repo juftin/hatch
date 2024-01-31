@@ -24,3 +24,7 @@ def hatch_register_publisher():
 @hookspec
 def hatch_register_template():
     """Register new classes that adhere to the template interface."""
+
+@hookspec
+def hatch_register_command_line():
+    """Register new objects that adhere to the command line interface."""

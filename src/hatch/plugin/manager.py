@@ -28,3 +28,8 @@ class PluginManager(_PluginManager):
         from hatch.template.plugin import hooks
 
         self.manager.register(hooks)
+
+    def hatch_register_command_line(self):
+        from hatch.cli.plugin import hooks
+
+        self.manager.register(hooks)
